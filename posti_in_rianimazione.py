@@ -34,8 +34,8 @@ from sklearn.preprocessing import FunctionTransformer
 # Dati scaricati da https://github.com/pcm-dpc/COVID-19
 
 # E' possibile modificare lo script per predire tutte le altre variabili
-
-col_to_plot = ['terapia_intensiva'] #, 'ricoverati_con_sintomi', 'totale_ospedalizzati']
+# Se si sceglie più di una colonna viene creato un unico plot
+col_to_plot = ['terapia_intensiva'] #, 'ricoverati_con_sintomi']
 FUTURE_DAYS = 7
 DIR_DATI_NAZ = 'dati-andamento-nazionale'
 FNAME_DATI_NAZ = 'dpc-covid19-ita-andamento-nazionale.csv'
@@ -64,23 +64,21 @@ X_FUTURE = np.arange(len(data_naz) + FUTURE_DAYS).reshape(-1,1)
 for c in col_to_plot:
     y = data_naz[c].values.reshape(-1,1)
 
-    # Fitting Polynomial Regression to the dataset
+    # QUADRATIC
     poly_reg = PolynomialFeatures(degree=2)
     X_poly = poly_reg.fit_transform(X)
     pol_reg = LinearRegression()
     pol_reg.fit(X_poly, y)
-
-    # # prediction to 14 days
     plt.plot(X_FUTURE, pol_reg.predict(poly_reg.fit_transform(X_FUTURE)), 'r--')
 
-    # FITTING EXP
+    # EXPONENTIAL
     transformer = FunctionTransformer(np.log, validate=True)
     y_log = transformer.fit_transform(y)  
     model = LinearRegression().fit(X, y_log)
-
     y_fit = model.predict(X_FUTURE)
-    plt.plot(X_FUTURE, np.exp(y_fit), "k--")     # 3
+    plt.plot(X_FUTURE, np.exp(y_fit), "k--")
 
+    # plot original data
     plt.scatter(X, y, label=c, s=72)
 
 date_future = pd.date_range(start=data_naz['data'].iloc[0] , periods=len(data_naz) + FUTURE_DAYS, freq='24H')
@@ -121,6 +119,7 @@ plt.grid()
 
 # PLOT CURRENT STATUS
 if PLOT_WITHOUT_PREDICTION:
+    col_to_plot = ['terapia_intensiva', 'ricoverati_con_sintomi']
     plt.figure()
     plt.title('Dati COVID-19 Italia' + '\n' + str(data_naz['data'].iloc[-1]))
 
