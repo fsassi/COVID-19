@@ -36,7 +36,9 @@ from sklearn.preprocessing import FunctionTransformer
 # E' possibile modificare lo script per predire tutte le altre variabili
 # Se si sceglie più di una colonna viene creato un unico plot
 col_to_plot = ['terapia_intensiva', 'totale_attualmente_positivi']
-col_to_plot = ['totale_attualmente_positivi']
+col_to_plot = ['ricoverati_con_sintomi', 'terapia_intensiva', 'totale_ospedalizzati', 
+             'isolamento_domiciliare', 'totale_attualmente_positivi', 'nuovi_attualmente_positivi', 'dimessi_guariti', 
+             'deceduti', 'totale_casi', 'tamponi']
 # col_to_plot = ['totale_attualmente_positivi'] #, 'ricoverati_con_sintomi']
 # col_to_plot = ['totale_attualmente_positivi', 'nuovi_attualmente_positivi']
 # col_to_plot = ['nuovi_attualmente_positivi']
@@ -57,69 +59,71 @@ data_naz = pd.read_csv(os.path.join('dati-andamento-nazionale', FNAME_DATI_NAZ))
 data_naz['data'] = pd.to_datetime(data_naz['data'])
 
 
-plt.figure()
-ax = plt.axes()
-plt.title('Interpolazione dati COVID-19 Italia \n' + \
-          'Ultimi dati: ' + str(data_naz['data'].iloc[-1]) + '\n' + \
-          "Predizione a " + str(FUTURE_DAYS) + ' giorni')
-
-X = np.arange(len(data_naz)).reshape(-1,1)
-X_FUTURE = np.arange(len(data_naz) + FUTURE_DAYS).reshape(-1,1)
-
 for c in col_to_plot:
-    y = data_naz[c].values.reshape(-1,1)
+	plt.figure()
+	ax = plt.axes()
+	plt.title(c + '\nInterpolazione ' + str(FUTURE_DAYS) + ' giorni dati COVID-19 Italia \n' + \
+			  'Ultimi dati: ' + str(data_naz['data'].iloc[-1]) )
 
-    # QUADRATIC
-    poly_reg = PolynomialFeatures(degree=2)
-    X_poly = poly_reg.fit_transform(X)
-    pol_reg = LinearRegression()
-    pol_reg.fit(X_poly, y)
-    plt.plot(X_FUTURE, pol_reg.predict(poly_reg.fit_transform(X_FUTURE)), 'r--')
+	X = np.arange(len(data_naz)).reshape(-1,1)
+	X_FUTURE = np.arange(len(data_naz) + FUTURE_DAYS).reshape(-1,1)
 
-    # EXPONENTIAL
-    transformer = FunctionTransformer(np.log, validate=True)
-    y_log = transformer.fit_transform(y)  
-    model = LinearRegression().fit(X, y_log)
-    y_fit = model.predict(X_FUTURE)
-    plt.plot(X_FUTURE, np.exp(y_fit), "k--")
+	y = data_naz[c].values.reshape(-1,1)
 
-    # plot original data
-    plt.scatter(X, y, label=c, s=72)
+	# QUADRATIC
+	poly_reg = PolynomialFeatures(degree=2)
+	X_poly = poly_reg.fit_transform(X)
+	pol_reg = LinearRegression()
+	pol_reg.fit(X_poly, y)
+	plt.plot(X_FUTURE, pol_reg.predict(poly_reg.fit_transform(X_FUTURE)), 'r--')
 
-date_future = pd.date_range(start=data_naz['data'].iloc[0] , periods=len(data_naz) + FUTURE_DAYS, freq='24H')
-date_future_str = [a.strftime('%d')  for a in date_future]
-X_future = np.arange(len(data_naz) + FUTURE_DAYS).reshape(-1,1)
+	# EXPONENTIAL
+	transformer = FunctionTransformer(np.log, validate=True)
+	y_log = transformer.fit_transform(y)  
+	model = LinearRegression().fit(X, y_log)
+	y_fit = model.predict(X_FUTURE)
+	plt.plot(X_FUTURE, np.exp(y_fit), "k--")
 
-plt.xticks(X_future, date_future_str)
-plt.xlabel('Febbraio | Marzo')
+	# plot original data
+	plt.scatter(X, y, label=c, s=72)
 
-# add terapia intensiva hlines
-last_terapia_intensiva = data_naz['terapia_intensiva'].iloc[-1]
-plt.axhline(last_terapia_intensiva, color='green')
-plt.axhline(last_terapia_intensiva*2, color='orange')
-# https://www.agi.it/fact-checking/news/2020-03-06/coronavirus-posti-letto-ospedali-7343251/
-plt.axhline(5090, color='red') 
-plt.yticks(list(plt.yticks()[0]) + [last_terapia_intensiva, last_terapia_intensiva * 2])
+	date_future = pd.date_range(start=data_naz['data'].iloc[0] , periods=len(data_naz) + FUTURE_DAYS, freq='24H')
+	date_future_str = [a.strftime('%d')  for a in date_future]
+	X_future = np.arange(len(data_naz) + FUTURE_DAYS).reshape(-1,1)
 
-# add legend
-handles, labels = ax.get_legend_handles_labels()
-handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='--'))
-labels.append('Interpolazione quadratica')
+	plt.xticks(X_future, date_future_str)
+	plt.xlabel('Febbraio | Marzo')
 
-handles.append(Line2D([0], [0], color='k', linewidth=3, linestyle='--'))
-labels.append('Interpolazione esponenziale')
+	
+	last_value = data_naz[c].iloc[-1]
+	plt.axhline(last_value, color='green')
+	plt.axhline(last_value*2, color='orange')
 
-handles.append(Line2D([0], [0], color='g', linewidth=3, linestyle='-'))
-labels.append('Attualmente in rianimazione')
+	# add terapia intensiva hlines
+	if c == 'terapia_intensiva':
+		# https://www.agi.it/fact-checking/news/2020-03-06/coronavirus-posti-letto-ospedali-7343251/
+		plt.axhline(5090, color='red') 
+		plt.yticks(list(plt.yticks()[0]) + [last_value, last_value * 2])
 
-handles.append(Line2D([0], [0], color='orange', linewidth=3, linestyle='-'))
-labels.append('Raddoppio attuali in rianimazione')
+	# add legend
+	handles, labels = ax.get_legend_handles_labels()
+	handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='--'))
+	labels.append('Interpolazione quadratica')
 
-handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='-'))
-labels.append('Totale posti in rianimazione in Italia')
+	handles.append(Line2D([0], [0], color='k', linewidth=3, linestyle='--'))
+	labels.append('Interpolazione esponenziale')
 
-plt.legend(handles=handles, labels=labels, loc='upper left')
-plt.grid()
+	handles.append(Line2D([0], [0], color='g', linewidth=3, linestyle='-'))
+	labels.append('Attualmente in rianimazione')
+
+	handles.append(Line2D([0], [0], color='orange', linewidth=3, linestyle='-'))
+	labels.append('Raddoppio attuali in rianimazione')
+
+	handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='-'))
+	labels.append('Totale posti in rianimazione in Italia')
+
+	plt.legend(handles=handles, labels=labels, loc='upper left')
+	plt.grid()
 
 
 # PLOT CURRENT STATUS
