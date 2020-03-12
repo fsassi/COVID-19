@@ -114,13 +114,14 @@ for c in col_to_plot:
 	labels.append('Interpolazione esponenziale')
 
 	handles.append(Line2D([0], [0], color='g', linewidth=3, linestyle='-'))
-	labels.append('Attualmente in rianimazione')
+	labels.append('Valore attuale')
 
 	handles.append(Line2D([0], [0], color='orange', linewidth=3, linestyle='-'))
-	labels.append('Raddoppio attuali in rianimazione')
+	labels.append('Raddoppio attuale')
 
-	handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='-'))
-	labels.append('Totale posti in rianimazione in Italia')
+	if c == 'terapia_intensiva':
+		handles.append(Line2D([0], [0], color='r', linewidth=3, linestyle='-'))
+		labels.append('Totale posti in rianimazione in Italia')
 
 	plt.legend(handles=handles, labels=labels, loc='upper left')
 	plt.grid()

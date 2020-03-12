@@ -1,11 +1,11 @@
 ## COME USARE
 
-'''
+```
 Genera tutti i plot aggiornati con
- 
+
 python3 plot_all.py 
 
-'''
+```
 
 
 
