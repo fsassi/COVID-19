@@ -58,8 +58,12 @@ PLOT_WITHOUT_PREDICTION = False
 data_naz = pd.read_csv(os.path.join('dati-andamento-nazionale', FNAME_DATI_NAZ))
 data_naz['data'] = pd.to_datetime(data_naz['data'])
 
-
 for c in col_to_plot:
+	ex_date = pd.to_datetime('2020-03-10 18:00:00') 
+	idx = data_naz.index[data_naz['data'] == ex_date]
+	data_naz[c][idx] =  (data_naz[c][idx+1].values + data_naz[c][idx-1].values) / 2.
+	
+	
 	plt.figure()
 	ax = plt.axes()
 	plt.title(c + '\nInterpolazione ' + str(FUTURE_DAYS) + ' giorni dati COVID-19 Italia \n' + \
